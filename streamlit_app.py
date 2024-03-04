@@ -12,29 +12,52 @@ forums](https://discuss.streamlit.io).
 
 In the meantime, below is an example of what you can do with just a few lines of code:
 """
+import streamlit as st
+import pandas as pd
+import pickle
 
-num_points = st.slider("Number of points in spiral", 1, 10000, 1100)
-num_turns = st.slider("Number of turns in spiral", 1, 300, 31)
+# Load the trained model
+with open('scoring_prediction_model.pkl', 'rb') as model_file:
+    model = pickle.load(model_file)
 
-indices = np.linspace(0, 1, num_points)
-theta = 2 * np.pi * num_turns * indices
-radius = indices
+# Function to preprocess input data and make predictions
+def predict_scoring(features):
+    # Create a DataFrame with the input features
+    input_data = pd.DataFrame([features])
+    # Perform any necessary preprocessing (e.g., encoding categorical variables)
+    # Ensure that the order of features matches the order used during model training
+    # For simplicity, assuming one-hot encoding for categorical variables
 
-x = radius * np.cos(theta)
-y = radius * np.sin(theta)
+    # Make predictions
+    prediction = model.predict(input_data)
+    return prediction[0]
 
-df = pd.DataFrame({
-    "x": x,
-    "y": y,
-    "idx": indices,
-    "rand": np.random.randn(num_points),
-})
+# Streamlit app
+def main():
+    st.title('Scoring Prediction App')
 
-st.altair_chart(alt.Chart(df, height=700, width=700)
-    .mark_point(filled=True)
-    .encode(
-        x=alt.X("x", axis=None),
-        y=alt.Y("y", axis=None),
-        color=alt.Color("idx", legend=None, scale=alt.Scale()),
-        size=alt.Size("rand", legend=None, scale=alt.Scale(range=[1, 150])),
-    ))
+    # Sidebar with user input
+    st.sidebar.header('User Input Features')
+
+    # Example input features (replace with your input fields)
+    tier = st.sidebar.selectbox('Tier', ['T1', 'T2', 'T3'])
+    application_type = st.sidebar.selectbox('Application Type', ['COTS', 'Homegrown'])
+    hosting_type = st.sidebar.selectbox('Hosting Type', ['On-Premise', 'AWS', 'PrivateCloud'])
+    # Add more input features as needed
+
+    # Collect user input features
+    user_input = {
+        'Tier': tier,
+        'Application Type': application_type,
+        'Hosting Type': hosting_type,
+        # Add more input features as needed
+    }
+
+    # Make prediction
+    scoring_prediction = predict_scoring(user_input)
+
+    # Display prediction
+    st.write(f'Predicted Scoring: {scoring_prediction}')
+
+if __name__ == '__main__':
+    main()
